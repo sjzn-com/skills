@@ -22,7 +22,7 @@ npx skills add https://github.com/sjzn-com/skills --skill shanjian-cli
 
 安装后重启或刷新 Claude Code，让技能重新加载。
 
-本地开发调试时，如果你还没有发布到 GitHub，可以临时复制当前目录：
+本地开发调试时，可以临时复制当前目录：
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -63,7 +63,7 @@ Windows PowerShell：
 ~\.claude\skills\shanjian-cli\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"
 ```
 
-默认下载仓库是 `sjzn-com/skills`。如果你的 CLI 二进制发布在其他仓库：
+默认下载来源是 `sjzn-com/skills`。如需改下载来源：
 
 ```bash
 ~/.claude/skills/shanjian-cli/scripts/install-shanjian.sh --repo owner/name --version latest
@@ -96,14 +96,14 @@ shanjian auth status
 shanjian auth login
 ```
 
-如果由 Claude Code 帮你登录，应让它输出二维码图片并直接展示给你扫码，而不是只贴二维码链接：
+`auth login` 默认会在控制台输出二维码。如果由 Claude Code 帮你登录，也应让它额外输出二维码图片并直接展示给你扫码，而不是只贴二维码链接：
 
 ```bash
 mkdir -p work/shanjian-state
 shanjian auth login --state-dir work/shanjian-state --qr-output work/shanjian-login-qr.png --timeout 300 --interval 2 --yes
 ```
 
-CLI 会先打印 `二维码图片：<absolute-path>`，Claude Code 应该立刻用 Markdown 图片把这张 PNG 发出来给你扫码，然后继续保持登录命令运行并等待确认。
+CLI 会先在控制台打印二维码，并输出 `二维码图片：<absolute-path>`。Claude Code 应该立刻用 Markdown 图片把这张 PNG 发出来给你扫码，然后继续保持登录命令运行并等待确认。
 
 扫码成功后，Claude Code 应再次运行：
 
@@ -111,32 +111,33 @@ CLI 会先打印 `二维码图片：<absolute-path>`，Claude Code 应该立刻�
 shanjian auth status --state-dir work/shanjian-state
 ```
 
-确认已登录后，再继续执行原本的查询、下载或创作命令。后续命令如果使用了 `work/shanjian-state`，也要继续带同一个 `--state-dir`。
+确认已登录后，再继续执行原本的查询、下载或创作命令。后续命令如果使用了 `work/shanjian-state`，必须继续带同一个 `--state-dir`，并建议放在长文本主题前面，避免界面截断时看不到参数。
 
 只读查询：
 
 ```bash
-shanjian agent list
-shanjian templates list --workflow-type shortVideo --json
-shanjian creation short-video templates
-shanjian creation ai-short-film models
-shanjian creation ai-short-film prompts
-shanjian tasks list
-shanjian creations list
+shanjian agent list --state-dir work/shanjian-state
+shanjian templates list --state-dir work/shanjian-state --workflow-type shortVideo --json
+shanjian creation short-video templates --state-dir work/shanjian-state
+shanjian creation ai-short-film models --state-dir work/shanjian-state
+shanjian creation ai-short-film prompts --state-dir work/shanjian-state
+shanjian tasks list --state-dir work/shanjian-state
+shanjian creations list --state-dir work/shanjian-state
 ```
 
 创建任务前先使用 `--dry-run`：
 
 ```bash
-shanjian creation short-video create "短视频主题" --duration 30 --dry-run
+shanjian creation short-video create --state-dir work/shanjian-state "短视频主题" --duration 30 --dry-run
 ```
 
-确认要真实提交后，再移除 `--dry-run`。
+确认要真实提交后，只移除 `--dry-run`，继续保留同一个 `--state-dir`。
 
 ## 安全注意
 
 - 登录态通常保存在 `~/.shanjian/session.json`。
 - 如果登录时使用了 `--state-dir work/shanjian-state`，后续命令也必须继续使用同一个 `--state-dir`。
-- `auth login --qr-output <path>` 会写出登录二维码 PNG；登录成功后会写入本机登录态；`auth logout` 会删除登录态。
+- 仅通过 `auth status` 判断授权状态，不要打开、提交或分享本地登录态文件。
+- `auth login` 默认在控制台输出二维码；`auth login --qr-output <path>` 会额外写出登录二维码 PNG；登录成功后会写入本机登录态；`auth logout` 会删除登录态。
 - 创建类命令会提交真实任务，可能消耗积分。
-- 下载命令会写入文件，不要把下载产物提交到 skill 仓库。
+- 下载命令会写入文件。

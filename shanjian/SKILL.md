@@ -16,7 +16,7 @@ description: Install and safely operate the Shanjian CLI from GitHub Release bin
 3. 如果已安装，运行 `shanjian auth status`，然后报告安装可用和登录状态。
 4. 如果未安装，在 macOS/Linux 执行 `<skill_dir>/scripts/install-shanjian.sh --version latest --install-dir "$HOME/.local/bin"`；在 Windows PowerShell 执行 `<skill_dir>\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"`。
 5. 安装后重新运行 `shanjian --help` 和 `shanjian auth status`。
-6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，不要继续执行模板、任务、创作、下载等业务命令。先引导用户登录，执行 `shanjian auth login`。
+6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，不要继续执行模板、任务、创作、下载等业务命令。先引导用户登录；用户同意后按“登录二维码展示流程”执行 `shanjian auth login`。
 
 如果执行脚本需要网络、写入用户目录或提升权限，使用工具请求许可；不要把安装命令作为最终答案停在说明层。
 
@@ -29,7 +29,7 @@ description: Install and safely operate the Shanjian CLI from GitHub Release bin
 
 ## 安装 CLI
 
-优先使用本技能自带脚本安装 GitHub Release 二进制。默认仓库是 `sjzn-com/skills`；如果实际发布仓库不同，传 `--repo owner/name` 或设置 `SHANJIAN_CLI_REPO`。
+优先使用本技能自带脚本安装 GitHub Release 二进制。默认下载来源是 `sjzn-com/skills`；如需改下载来源，传 `--repo owner/name` 或设置 `SHANJIAN_CLI_REPO`。
 
 macOS/Linux：
 
@@ -67,7 +67,7 @@ shanjian auth status
 
 不要在没有用户同意的情况下执行 `shanjian auth login`。用户要求登录、同意登录，或业务命令因未授权被阻塞时，询问用户是否开始扫码登录；用户同意后必须直接展示二维码图片，不要只给登录链接。
 
-1. 先确认当前 CLI 支持图片输出：运行 `shanjian auth login --help`，检查是否包含 `--qr-output`。如果没有，重新安装最新 release 后再继续；不要回退到旧的 `shanjian login` 或只贴链接。
+1. 先确认当前 CLI 支持默认控制台二维码输出：运行 `shanjian auth login --help`，检查 `--qr-output` 说明是否写明“控制台默认输出二维码”。如果没有，重新安装最新 release 后再继续；不要回退到旧的 `shanjian login` 或只贴链接。
 2. 默认把登录态和二维码放在当前项目下，避免写入不可控位置：`work/shanjian-state`、`work/shanjian-login-qr.png`。如果用户指定了状态目录或图片路径，使用用户指定值。
 3. 用可持续运行的终端会话启动登录命令，并让命令尽快返回首屏输出；不要等命令结束后才回复用户。
 
@@ -76,7 +76,7 @@ mkdir -p work/shanjian-state
 shanjian auth login --state-dir work/shanjian-state --qr-output work/shanjian-login-qr.png --timeout 300 --interval 2 --yes
 ```
 
-4. 命令会打印 `二维码图片：<absolute-path>` 并继续等待扫码。拿到路径或确认文件已生成后，立刻向用户发送 Markdown 图片，路径必须是绝对路径：
+4. 命令会先在控制台打印二维码，并在使用 `--qr-output` 时打印 `二维码图片：<absolute-path>`，然后继续等待扫码。拿到路径或确认文件已生成后，立刻向用户发送 Markdown 图片，路径必须是绝对路径：
 
 ```markdown
 ![微信扫码登录](/absolute/path/to/work/shanjian-login-qr.png)
@@ -85,7 +85,16 @@ shanjian auth login --state-dir work/shanjian-state --qr-output work/shanjian-lo
 5. 保持登录命令会话运行并轮询它，直到登录成功、超时或用户取消。登录成功后，后续 `shanjian` 命令都要继续带同一个 `--state-dir work/shanjian-state`，除非用户要求改用默认登录态。
 6. 登录成功后必须再次运行 `shanjian auth status --state-dir work/shanjian-state` 确认授权有效，再继续用户原本要执行的查询、下载或创作命令。
 
-不要展示或总结登录后的 `bhb-session-token`。
+## 状态目录传递规则
+
+如果本轮登录或授权确认使用了自定义状态目录，例如 `work/shanjian-state`，就把它视为当前会话的 active state dir。之后每一条 `shanjian` 业务命令都必须包含完全相同的 `--state-dir <active-state-dir>`，包括 `--dry-run`、真实提交、查询、下载和轮询命令。
+
+执行命令前先检查即将运行的 shell 命令文本；如果命令里没有 `--state-dir <active-state-dir>`，停止并重写命令。为避免长主题文本导致界面截断看不见参数，把 `--state-dir` 放在自由文本主题之前：
+
+```bash
+shanjian creation moments create --state-dir work/shanjian-state "朋友圈主题" --dry-run
+shanjian creation moments create --state-dir work/shanjian-state "朋友圈主题"
+```
 
 ## 授权预检
 
@@ -106,38 +115,37 @@ shanjian auth login --state-dir work/shanjian-state --qr-output work/shanjian-lo
 
 ## 安全边界
 
-- 把 `~/.shanjian/session.json` 和任何自定义 `--state-dir` 会话文件视为敏感文件。
-- 不要打印、提交、复制或总结 `bhb-session-token`。
-- `auth login --qr-output <path>` 会写出登录二维码 PNG；`auth login` 会写入本地登录态；`auth logout` 会删除登录态。
+- 授权判断只通过 `auth status`，不要直接读取 `~/.shanjian/session.json` 或自定义 `--state-dir` 下的会话文件。
+- `auth login` 默认在控制台输出二维码；`auth login --qr-output <path>` 会额外写出登录二维码 PNG；`auth login` 会写入本地登录态；`auth logout` 会删除登录态。
 - 所有 `create` 命令都会提交真实任务，除非带 `--dry-run`，否则可能消耗积分。
 - 检查请求体时优先使用 `--dry-run`；对比接口结构时优先使用 `--json`。
-- 下载命令会写文件；除非用户要求，不要把下载产物放进要发布的 skill 仓库。
+- 下载命令会写文件；除非用户要求，不要处理下载产物。
 
 ## 常用命令
 
 只读或低风险检查：
 
 ```bash
-shanjian agent list
-shanjian templates list --workflow-type shortVideo --json
-shanjian creation short-video templates
-shanjian creation ai-short-film models
-shanjian creation ai-short-film prompts
-shanjian tasks list
-shanjian creations list
+shanjian agent list --state-dir work/shanjian-state
+shanjian templates list --state-dir work/shanjian-state --workflow-type shortVideo --json
+shanjian creation short-video templates --state-dir work/shanjian-state
+shanjian creation ai-short-film models --state-dir work/shanjian-state
+shanjian creation ai-short-film prompts --state-dir work/shanjian-state
+shanjian tasks list --state-dir work/shanjian-state
+shanjian creations list --state-dir work/shanjian-state
 ```
 
 真实创建前先 dry-run：
 
 ```bash
-shanjian creation moments create "朋友圈主题" --dry-run
-shanjian creation article create "文章主题" --dry-run
-shanjian creation image-text create "图文主题" --dry-run
-shanjian creation short-video create "短视频主题" --duration 30 --dry-run
-shanjian creation ai-short-film create "AI短剧主题" --image-url "https://example.com/ref.jpg" --dry-run
+shanjian creation moments create --state-dir work/shanjian-state "朋友圈主题" --dry-run
+shanjian creation article create --state-dir work/shanjian-state "文章主题" --dry-run
+shanjian creation image-text create --state-dir work/shanjian-state "图文主题" --dry-run
+shanjian creation short-video create --state-dir work/shanjian-state "短视频主题" --duration 30 --dry-run
+shanjian creation ai-short-film create --state-dir work/shanjian-state "AI短剧主题" --image-url "https://example.com/ref.jpg" --dry-run
 ```
 
-确认用户明确要提交后，再移除 `--dry-run`。
+确认用户明确要提交后，只移除 `--dry-run`，继续保留同一个 `--state-dir`。
 
 ## 工作流注意
 
@@ -145,16 +153,3 @@ shanjian creation ai-short-film create "AI短剧主题" --image-url "https://exa
 - 服务端工作流拼写 `aiShortFlim` 是故意保留，不要改成 `aiShortFilm`。
 - `--template-id` 指 `/ai_agent_user/template` 返回的记录 `id`，不是嵌套的 `templateId` 或 `styleId`。
 - `ai-short-film create` 当前使用已有图片 URL；`--image-url` 可重复。
-
-## 发布这个 Skill 包
-
-发布到 GitHub 时只放这个 skill 包所需文件：
-
-```text
-SKILL.md
-agents/openai.yaml
-scripts/install-shanjian.sh
-scripts/install-shanjian.ps1
-```
-
-不要把 CLI 源码、构建目录、下载产物或登录态放进该 GitHub 仓库。
