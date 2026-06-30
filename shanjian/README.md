@@ -17,7 +17,7 @@ README.md
 直接使用 `skills` 命令安装：
 
 ```bash
-npx skills add https://github.com/imocat/shanjian
+npx skills add https://github.com/sjzntec/skills --skill shanjian-cli
 ```
 
 安装后重启或刷新 Claude Code，让技能重新加载。
