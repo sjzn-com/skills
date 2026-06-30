@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shanjian CLI"
+  short_description: "安装和安全使用闪剪 CLI 的 Claude Code 技能"
+  default_prompt: "Use $shanjian-cli to install the Shanjian CLI release binary now, then verify shanjian --help and auth status."
