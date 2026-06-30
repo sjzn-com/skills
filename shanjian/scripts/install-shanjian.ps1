@@ -1,6 +1,6 @@
 param(
   [string]$Version = "latest",
-  [string]$Repo = $(if ($env:SHANJIAN_CLI_REPO) { $env:SHANJIAN_CLI_REPO } else { "shanjian-tv/shanjian-cli" }),
+  [string]$Repo = $(if ($env:SHANJIAN_CLI_REPO) { $env:SHANJIAN_CLI_REPO } else { "sjzn-com/skills" }),
   [string]$InstallDir = (Join-Path $HOME ".local\bin")
 )
 

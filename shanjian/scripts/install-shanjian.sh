@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo="${SHANJIAN_CLI_REPO:-shanjian-tv/shanjian-cli}"
+repo="${SHANJIAN_CLI_REPO:-sjzn-com/skills}"
 version="latest"
 install_dir="${HOME}/.local/bin"
 
@@ -13,7 +13,7 @@ Usage:
   install-shanjian.sh [--version latest|vX.Y.Z] [--repo owner/name] [--install-dir DIR]
 
 Environment:
-  SHANJIAN_CLI_REPO   Default GitHub repo, e.g. shanjian-tv/shanjian-cli
+  SHANJIAN_CLI_REPO   Default GitHub repo, e.g. sjzn-com/skills
 EOF
 }
 

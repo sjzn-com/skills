@@ -26,7 +26,7 @@ npx skills add https://github.com/sjzn-com/skills --skill shanjian-cli
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R v2/skills/shanjian-cli ~/.claude/skills/shanjian-cli
+cp -R v2/skills/shanjian ~/.claude/skills/shanjian-cli
 ```
 
 ## 使用方式
@@ -43,6 +43,7 @@ cp -R v2/skills/shanjian-cli ~/.claude/skills/shanjian-cli
 2. 如果未安装，执行本技能内的安装脚本下载 GitHub Release 二进制。
 3. 安装完成后运行 `shanjian --help`。
 4. 运行 `shanjian auth status` 检查登录状态。
+5. 如果未登录，停止业务命令，并引导你扫码登录。
 
 如果安装脚本需要联网或写入 `~/.local/bin`，Claude Code 应该先请求你的许可。
 
@@ -62,7 +63,7 @@ Windows PowerShell：
 ~\.claude\skills\shanjian-cli\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"
 ```
 
-默认下载仓库是 `shanjian-tv/shanjian-cli`。如果你的 CLI 二进制发布在其他仓库：
+默认下载仓库是 `sjzn-com/skills`。如果你的 CLI 二进制发布在其他仓库：
 
 ```bash
 ~/.claude/skills/shanjian-cli/scripts/install-shanjian.sh --repo owner/name --version latest
@@ -83,7 +84,13 @@ shanjian --help
 shanjian auth status
 ```
 
-登录需要你明确授权后再执行：
+登录需要你明确授权后再执行。执行任何查询、创作或下载命令前，Claude Code 都应该先运行：
+
+```bash
+shanjian auth status
+```
+
+如果显示未登录，Claude Code 应停止原命令并引导你登录，而不是反复执行业务命令并提示授权失败。
 
 ```bash
 shanjian auth login
@@ -97,6 +104,14 @@ shanjian auth login --state-dir work/shanjian-state --qr-output work/shanjian-lo
 ```
 
 CLI 会先打印 `二维码图片：<absolute-path>`，Claude Code 应该立刻用 Markdown 图片把这张 PNG 发出来给你扫码，然后继续保持登录命令运行并等待确认。
+
+扫码成功后，Claude Code 应再次运行：
+
+```bash
+shanjian auth status --state-dir work/shanjian-state
+```
+
+确认已登录后，再继续执行原本的查询、下载或创作命令。后续命令如果使用了 `work/shanjian-state`，也要继续带同一个 `--state-dir`。
 
 只读查询：
 
@@ -121,6 +136,7 @@ shanjian creation short-video create "短视频主题" --duration 30 --dry-run
 ## 安全注意
 
 - 登录态通常保存在 `~/.shanjian/session.json`。
+- 如果登录时使用了 `--state-dir work/shanjian-state`，后续命令也必须继续使用同一个 `--state-dir`。
 - 不要提交、打印或分享 `bhb-session-token`。
 - `auth login --qr-output <path>` 会写出登录二维码 PNG；登录成功后会写入本机登录态；`auth logout` 会删除登录态。
 - 创建类命令会提交真实任务，可能消耗积分。

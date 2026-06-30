@@ -1,6 +1,6 @@
 ---
 name: shanjian-cli
-description: Install and safely operate the Shanjian CLI from GitHub Release binaries in Claude Code. Use when the user invokes /shanjian-cli, wants Claude Code to install shanjian, show a QR-code image for auth login, check login status, run Shanjian workflow commands, list templates/tasks/creations, download outputs, or package this skill for a GitHub repository that intentionally does not include CLI source code.
+description: Install and safely operate the Shanjian CLI from GitHub Release binaries in Claude Code. Use when the user invokes /shanjian-cli, wants Claude Code to install shanjian, check authorization first, guide QR-code auth login when needed, run Shanjian workflow commands, list templates/tasks/creations, download outputs, or package this skill for a GitHub repository that intentionally does not include CLI source code.
 ---
 
 # Shanjian CLI
@@ -16,6 +16,7 @@ description: Install and safely operate the Shanjian CLI from GitHub Release bin
 3. 如果已安装，运行 `shanjian auth status`，然后报告安装可用和登录状态。
 4. 如果未安装，在 macOS/Linux 执行 `<skill_dir>/scripts/install-shanjian.sh --version latest --install-dir "$HOME/.local/bin"`；在 Windows PowerShell 执行 `<skill_dir>\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"`。
 5. 安装后重新运行 `shanjian --help` 和 `shanjian auth status`。
+6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，不要继续执行模板、任务、创作、下载等业务命令。先引导用户登录；用户同意后按“登录二维码展示流程”执行 `shanjian auth login`。
 
 如果执行脚本需要网络、写入用户目录或提升权限，使用工具请求许可；不要把安装命令作为最终答案停在说明层。
 
@@ -28,7 +29,7 @@ description: Install and safely operate the Shanjian CLI from GitHub Release bin
 
 ## 安装 CLI
 
-优先使用本技能自带脚本安装 GitHub Release 二进制。默认仓库是 `shanjian-tv/shanjian-cli`；如果实际发布仓库不同，传 `--repo owner/name` 或设置 `SHANJIAN_CLI_REPO`。
+优先使用本技能自带脚本安装 GitHub Release 二进制。默认仓库是 `sjzn-com/skills`；如果实际发布仓库不同，传 `--repo owner/name` 或设置 `SHANJIAN_CLI_REPO`。
 
 macOS/Linux：
 
@@ -53,7 +54,7 @@ shanjian_windows_amd64.zip
 SHA256SUMS
 ```
 
-安装完成后先检查：
+安装完成后先检查授权状态：
 
 ```bash
 shanjian --help
@@ -62,7 +63,9 @@ shanjian auth status
 
 ## 登录二维码展示流程
 
-不要替用户执行 `shanjian auth login`，除非用户明确要求登录。用户要求登录时，必须直接展示二维码图片，不要只给登录链接。
+所有需要授权的命令前都要先运行 `shanjian auth status`。如果未登录，不要反复重试业务命令，也不要只提示“需要授权”；要明确告诉用户当前未登录，并引导用户扫码登录。
+
+不要在没有用户同意的情况下执行 `shanjian auth login`。用户要求登录、同意登录，或业务命令因未授权被阻塞时，询问用户是否开始扫码登录；用户同意后必须直接展示二维码图片，不要只给登录链接。
 
 1. 先确认当前 CLI 支持图片输出：运行 `shanjian auth login --help`，检查是否包含 `--qr-output`。如果没有，重新安装最新 release 后再继续；不要回退到旧的 `shanjian login` 或只贴链接。
 2. 默认把登录态和二维码放在当前项目下，避免写入不可控位置：`work/shanjian-state`、`work/shanjian-login-qr.png`。如果用户指定了状态目录或图片路径，使用用户指定值。
@@ -80,8 +83,26 @@ shanjian auth login --state-dir work/shanjian-state --qr-output work/shanjian-lo
 ```
 
 5. 保持登录命令会话运行并轮询它，直到登录成功、超时或用户取消。登录成功后，后续 `shanjian` 命令都要继续带同一个 `--state-dir work/shanjian-state`，除非用户要求改用默认登录态。
+6. 登录成功后必须再次运行 `shanjian auth status --state-dir work/shanjian-state` 确认授权有效，再继续用户原本要执行的查询、下载或创作命令。
 
 不要展示或总结登录后的 `bhb-session-token`。
+
+## 授权预检
+
+执行下面任何命令前，都必须先确认授权状态：
+
+- `shanjian agent list`
+- `shanjian templates ...`
+- `shanjian creation ...`
+- `shanjian tasks ...`
+- `shanjian creations ...`
+
+预检规则：
+
+1. 先运行 `shanjian auth status`，或在使用自定义登录态时运行 `shanjian auth status --state-dir <dir>`。
+2. 如果未登录，停止原命令，说明需要扫码登录，并按“登录二维码展示流程”引导用户。
+3. 如果登录成功后使用了自定义 `--state-dir`，后续所有命令都必须带同一个 `--state-dir`。
+4. 只有 `auth status` 确认已登录后，才执行用户原本请求的业务命令。
 
 ## 安全边界
 
