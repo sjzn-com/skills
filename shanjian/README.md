@@ -1,6 +1,6 @@
 # Shanjian CLI Skill
 
-这是给 Claude Code 使用的闪剪 CLI 技能包。它不包含 CLI 源码，只包含让 Claude Code 安装、验证和安全使用 `shanjian` 命令所需的技能说明与安装脚本。
+这是给 Claude Code 使用的闪剪 CLI 技能包，用于安装、验证和安全使用 `shanjian` 命令。
 
 ## 包内容
 
@@ -43,7 +43,7 @@ cp -R v2/skills/shanjian ~/.claude/skills/shanjian-cli
 2. 如果未安装，执行本技能内的安装脚本下载 GitHub Release 二进制。
 3. 安装完成后运行 `shanjian --help`。
 4. 运行 `shanjian auth status` 检查登录状态。
-5. 如果未登录，停止业务命令，并引导你扫码登录。
+5. 如果未登录，Claude Code 应立即启动扫码登录流程并展示微信二维码。
 
 如果安装脚本需要联网或写入 `~/.local/bin`，Claude Code 应该先请求你的许可。
 
@@ -84,13 +84,13 @@ shanjian --help
 shanjian auth status
 ```
 
-登录需要你明确授权后再执行。执行任何查询、创作或下载命令前，Claude Code 都应该先运行：
+执行任何查询、创作或下载命令前，Claude Code 都应该先运行：
 
 ```bash
 shanjian auth status
 ```
 
-如果显示未登录，Claude Code 应停止原命令并引导你登录，而不是反复执行业务命令并提示授权失败。
+如果显示未登录，Claude Code 应暂停原命令，立即启动扫码登录流程并展示微信二维码，而不是停下来等待额外确认，也不是反复执行业务命令并提示授权失败。
 
 ```bash
 shanjian auth login

@@ -1,11 +1,11 @@
 ---
 name: shanjian-cli
-description: Install and safely operate the Shanjian CLI from GitHub Release binaries in Claude Code. Use when the user invokes /shanjian-cli, wants Claude Code to install shanjian, check authorization first, guide QR-code auth login when needed, run Shanjian workflow commands, list templates/tasks/creations, download outputs, or package this skill for a GitHub repository that intentionally does not include CLI source code.
+description: Install and safely operate the Shanjian CLI in Claude Code. Use when the user invokes /shanjian-cli, wants Claude Code to install shanjian, check authorization first, show QR-code auth login when needed, run Shanjian workflow commands, list templates/tasks/creations, or download outputs.
 ---
 
 # Shanjian CLI
 
-在 Claude Code 中安装和使用闪剪 CLI 时使用本技能。这个 GitHub 包只面向 Claude Code 安装使用，不包含 CLI 源码或工程文件。
+在 Claude Code 中安装和使用闪剪 CLI 时使用本技能。
 
 ## 默认行为
 
@@ -16,7 +16,7 @@ description: Install and safely operate the Shanjian CLI from GitHub Release bin
 3. 如果已安装，运行 `shanjian auth status`，然后报告安装可用和登录状态。
 4. 如果未安装，在 macOS/Linux 执行 `<skill_dir>/scripts/install-shanjian.sh --version latest --install-dir "$HOME/.local/bin"`；在 Windows PowerShell 执行 `<skill_dir>\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"`。
 5. 安装后重新运行 `shanjian --help` 和 `shanjian auth status`。
-6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，不要继续执行模板、任务、创作、下载等业务命令。先引导用户登录；用户同意后按“登录二维码展示流程”执行 `shanjian auth login`。
+6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，马上按“登录二维码展示流程”执行 `shanjian auth login` 并展示二维码。不要停下来等待额外确认口令。
 
 如果执行脚本需要网络、写入用户目录或提升权限，使用工具请求许可；不要把安装命令作为最终答案停在说明层。
 
@@ -63,13 +63,13 @@ shanjian auth status
 
 ## 登录二维码展示流程
 
-所有需要授权的命令前都要先运行 `shanjian auth status`。如果未登录，不要反复重试业务命令，也不要只提示“需要授权”；要明确告诉用户当前未登录，并引导用户扫码登录。
+所有需要授权的命令前都要先运行 `shanjian auth status`。如果未登录，不要反复重试业务命令，也不要只提示“需要授权”；要明确告诉用户当前未登录，然后立即启动扫码登录流程。
 
-不要在没有用户同意的情况下执行 `shanjian auth login`。用户要求登录、同意登录，或业务命令因未授权被阻塞时，询问用户是否开始扫码登录；用户同意后必须直接展示二维码图片，不要只给登录链接。
+当用户已经要求执行查询、下载、创作等需要授权的工作时，未登录就是当前任务的阻塞条件；此时直接执行 `shanjian auth login`，展示微信扫码二维码，并保持命令运行等待扫码结果。不要等待额外口令，不要把最终答案停在等待确认，也不要用本地文案替代原本的闪剪任务。
 
 1. 先确认当前 CLI 支持默认控制台二维码输出：运行 `shanjian auth login --help`，检查 `--qr-output` 说明是否写明“控制台默认输出二维码”。如果没有，重新安装最新 release 后再继续；不要回退到旧的 `shanjian login` 或只贴链接。
 2. 默认把登录态和二维码放在当前项目下，避免写入不可控位置：`work/shanjian-state`、`work/shanjian-login-qr.png`。如果用户指定了状态目录或图片路径，使用用户指定值。
-3. 用可持续运行的终端会话启动登录命令，并让命令尽快返回首屏输出；不要等命令结束后才回复用户。
+3. 用可持续运行的终端会话启动登录命令，并让命令尽快返回首屏输出；不要等命令结束后才给出进展。如果工具要求执行许可，按工具流程请求许可；不要改成普通文本确认。
 
 ```bash
 mkdir -p work/shanjian-state
@@ -109,7 +109,7 @@ shanjian creation moments create --state-dir work/shanjian-state "朋友圈主�
 预检规则：
 
 1. 先运行 `shanjian auth status`，或在使用自定义登录态时运行 `shanjian auth status --state-dir <dir>`。
-2. 如果未登录，停止原命令，说明需要扫码登录，并按“登录二维码展示流程”引导用户。
+2. 如果未登录，暂停原业务命令，说明需要微信扫码登录，然后立刻按“登录二维码展示流程”启动登录命令并展示二维码。
 3. 如果登录成功后使用了自定义 `--state-dir`，后续所有命令都必须带同一个 `--state-dir`。
 4. 只有 `auth status` 确认已登录后，才执行用户原本请求的业务命令。
 
