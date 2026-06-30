@@ -16,7 +16,7 @@ description: Install and safely operate the Shanjian CLI from GitHub Release bin
 3. 如果已安装，运行 `shanjian auth status`，然后报告安装可用和登录状态。
 4. 如果未安装，在 macOS/Linux 执行 `<skill_dir>/scripts/install-shanjian.sh --version latest --install-dir "$HOME/.local/bin"`；在 Windows PowerShell 执行 `<skill_dir>\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"`。
 5. 安装后重新运行 `shanjian --help` 和 `shanjian auth status`。
-6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，不要继续执行模板、任务、创作、下载等业务命令。先引导用户登录；用户同意后按“登录二维码展示流程”执行 `shanjian auth login`。
+6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，不要继续执行模板、任务、创作、下载等业务命令。先引导用户登录，执行 `shanjian auth login`。
 
 如果执行脚本需要网络、写入用户目录或提升权限，使用工具请求许可；不要把安装命令作为最终答案停在说明层。
 
