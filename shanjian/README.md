@@ -90,7 +90,7 @@ shanjian auth status
 shanjian auth status
 ```
 
-如果显示未登录，Claude Code 应暂停原命令，立即启动扫码登录流程并展示微信二维码，而不是停下来等待额外确认，也不是反复执行业务命令并提示授权失败。
+如果显示未登录，Claude Code 应暂停原命令，立即启动扫码登录流程并展示微信二维码；登录完成后继续执行原本的命令。
 
 ```bash
 shanjian auth login
@@ -113,10 +113,13 @@ shanjian auth status --state-dir work/shanjian-state
 
 确认已登录后，再继续执行原本的查询、下载或创作命令。后续命令如果使用了 `work/shanjian-state`，必须继续带同一个 `--state-dir`，并建议放在长文本主题前面，避免界面截断时看不到参数。
 
-只读查询：
+查询与默认智能体：
 
 ```bash
+shanjian auth spaces --state-dir work/shanjian-state
+shanjian auth switch-space <space-id> --state-dir work/shanjian-state
 shanjian agent list --state-dir work/shanjian-state
+shanjian agent switch <agent-id> --state-dir work/shanjian-state
 shanjian templates list --state-dir work/shanjian-state --workflow-type shortVideo --json
 shanjian creation short-video templates --state-dir work/shanjian-state
 shanjian creation ai-short-film models --state-dir work/shanjian-state
@@ -124,6 +127,10 @@ shanjian creation ai-short-film prompts --state-dir work/shanjian-state
 shanjian tasks list --state-dir work/shanjian-state
 shanjian creations list --state-dir work/shanjian-state
 ```
+
+登录时看到的多个选项是空间，不是 agent。`agent list` 只列当前空间里的 agent；如果要换空间，先运行 `shanjian auth spaces`，再运行 `shanjian auth switch-space <space-id>`。切换空间会清除已保存的默认 agent。
+
+当你要切换默认智能体时，先列出智能体并确认 ID，再运行 `shanjian agent switch <agent-id>`。后续模板、创建、任务和创作记录命令会默认使用已切换的智能体；显式传 `--agent-id <id>` 时会覆盖默认值。
 
 创建任务前先使用 `--dry-run`：
 

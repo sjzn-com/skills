@@ -16,7 +16,7 @@ description: Install and safely operate the Shanjian CLI in Claude Code. Use whe
 3. 如果已安装，运行 `shanjian auth status`，然后报告安装可用和登录状态。
 4. 如果未安装，在 macOS/Linux 执行 `<skill_dir>/scripts/install-shanjian.sh --version latest --install-dir "$HOME/.local/bin"`；在 Windows PowerShell 执行 `<skill_dir>\scripts\install-shanjian.ps1 -Version latest -InstallDir "$HOME\.local\bin"`。
 5. 安装后重新运行 `shanjian --help` 和 `shanjian auth status`。
-6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，马上按“登录二维码展示流程”执行 `shanjian auth login` 并展示二维码。不要停下来等待额外确认口令。
+6. 如果 `auth status` 显示未登录、授权失败、session 缺失或返回非零状态，马上按“登录二维码展示流程”执行 `shanjian auth login`、展示二维码，并等待扫码结果。
 
 如果执行脚本需要网络、写入用户目录或提升权限，使用工具请求许可；不要把安装命令作为最终答案停在说明层。
 
@@ -65,7 +65,7 @@ shanjian auth status
 
 所有需要授权的命令前都要先运行 `shanjian auth status`。如果未登录，不要反复重试业务命令，也不要只提示“需要授权”；要明确告诉用户当前未登录，然后立即启动扫码登录流程。
 
-当用户已经要求执行查询、下载、创作等需要授权的工作时，未登录就是当前任务的阻塞条件；此时直接执行 `shanjian auth login`，展示微信扫码二维码，并保持命令运行等待扫码结果。不要等待额外口令，不要把最终答案停在等待确认，也不要用本地文案替代原本的闪剪任务。
+当用户已经要求执行查询、下载、创作等需要授权的工作时，未登录就是当前任务的阻塞条件；此时直接执行 `shanjian auth login`，展示微信扫码二维码，并保持命令运行等待扫码结果。登录完成后继续执行原本的闪剪任务。
 
 1. 先确认当前 CLI 支持默认控制台二维码输出：运行 `shanjian auth login --help`，检查 `--qr-output` 说明是否写明“控制台默认输出二维码”。如果没有，重新安装最新 release 后再继续；不要回退到旧的 `shanjian login` 或只贴链接。
 2. 默认把登录态和二维码放在当前项目下，避免写入不可控位置：`work/shanjian-state`、`work/shanjian-login-qr.png`。如果用户指定了状态目录或图片路径，使用用户指定值。
@@ -100,7 +100,10 @@ shanjian creation moments create --state-dir work/shanjian-state "朋友圈主�
 
 执行下面任何命令前，都必须先确认授权状态：
 
+- `shanjian auth spaces`
+- `shanjian auth switch-space <space-id>`
 - `shanjian agent list`
+- `shanjian agent switch <agent-id>`
 - `shanjian templates ...`
 - `shanjian creation ...`
 - `shanjian tasks ...`
@@ -123,10 +126,13 @@ shanjian creation moments create --state-dir work/shanjian-state "朋友圈主�
 
 ## 常用命令
 
-只读或低风险检查：
+查询与默认智能体：
 
 ```bash
+shanjian auth spaces --state-dir work/shanjian-state
+shanjian auth switch-space <space-id> --state-dir work/shanjian-state
 shanjian agent list --state-dir work/shanjian-state
+shanjian agent switch <agent-id> --state-dir work/shanjian-state
 shanjian templates list --state-dir work/shanjian-state --workflow-type shortVideo --json
 shanjian creation short-video templates --state-dir work/shanjian-state
 shanjian creation ai-short-film models --state-dir work/shanjian-state
@@ -134,6 +140,10 @@ shanjian creation ai-short-film prompts --state-dir work/shanjian-state
 shanjian tasks list --state-dir work/shanjian-state
 shanjian creations list --state-dir work/shanjian-state
 ```
+
+登录时看到的多个选项是空间，不是 agent。`agent list` 只列当前空间里的 agent。如果用户说登录时有多个但 `agent list` 很少，先运行 `shanjian auth status` 和 `shanjian auth spaces` 确认当前空间；需要换空间时运行 `shanjian auth switch-space <space-id>`。切换空间会清除已保存的默认 agent，之后要重新运行 `shanjian agent list` 和 `shanjian agent switch <agent-id>`。
+
+当用户要求切换、固定或指定默认智能体时，先用 `shanjian agent list` 找到目标 ID，再运行 `shanjian agent switch <agent-id>`。之后模板、创建、任务和创作记录命令可以省略 `--agent-id`；如果用户明确要求临时使用另一个智能体，仍可在业务命令上带 `--agent-id <id>` 覆盖默认值。
 
 真实创建前先 dry-run：
 
